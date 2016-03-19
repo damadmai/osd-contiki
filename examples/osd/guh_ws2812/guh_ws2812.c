@@ -42,10 +42,18 @@
 #include "contiki.h"
 #include "contiki-net.h"
 #include "rest-engine.h"
+#include <util/delay.h>
+#include "light_ws2812.h"
+#include "sys/ctimer.h"
 
-#if PLATFORM_HAS_BUTTON
-#include "dev/button-sensor.h"
-#endif
+#define MAXPIX 240
+#define COLORLENGTH MAXPIX/2
+#define FADE 256/COLORLENGTH
+
+struct cRGB colors[8];
+struct cRGB led[MAXPIX];
+//static struct ctimer timer;
+static struct etimer timer;
 
 #define DEBUG 1
 #if DEBUG
@@ -63,44 +71,93 @@
  * Resources to be activated need to be imported through the extern keyword.
  * The build system automatically compiles the resources in the corresponding sub-directory.
  */
-extern resource_t
-  res_hello,
-  res_mirror,
-  res_chunks,
-  res_separate,
-  res_push,
-  res_event,
-  res_sub,
-  res_b1_sep_b2;
-#if PLATFORM_HAS_LEDS
+
+
 #include "dev/leds.h"
 extern resource_t res_leds, res_toggle;
-#endif
-#if PLATFORM_HAS_LIGHT
-#include "dev/light-sensor.h"
-extern resource_t res_light;
-#endif
-#if PLATFORM_HAS_BATTERY
+
 #include "dev/battery-sensor.h"
 extern resource_t res_battery;
-#endif
 /*
-#if PLATFORM_HAS_RADIO
-#include "dev/radio-sensor.h"
-extern resource_t res_radio;
-#endif
-#if PLATFORM_HAS_SHT11
-#include "dev/sht11/sht11-sensor.h"
-extern resource_t res_sht11;
-#endif
+
+static void
+callback(void *ptr)
+{
+  ctimer_reset(&timer);
+  	uint8_t j = 1;
+	uint8_t k = 1;
+
+		
+
+        //shift all vallues by one led
+        uint8_t i=0;           
+        for(i=MAXPIX; i>1; i--) 
+            led[i-1]=led[i-2];
+        //change colour when colourlength is reached   
+        if(k>COLORLENGTH)
+        {
+            j++;
+            if(j>7)
+            {
+              j=0;
+            }
+
+            k=0;
+        }
+        k++;
+        //loop colouers
+        
+        //fade red
+        if(led[0].r<(colors[j].r-FADE))
+            led[0].r+=FADE;
+            
+        if(led[0].r>(colors[j].r+FADE))
+            led[0].r-=FADE;
+
+        if(led[0].g<(colors[j].g-FADE))
+            led[0].g+=FADE;
+            
+        if(led[0].g>(colors[j].g+FADE))
+            led[0].g-=FADE;
+
+        if(led[0].b<(colors[j].b-FADE))
+            led[0].b+=FADE;
+            
+        if(led[0].b>(colors[j].b+FADE))
+            led[0].b-=FADE;
+
+
+
+
+  ws2812_sendarray((uint8_t *)led,MAXPIX*3);
+}
 */
+
 
 void 
 hw_init()
 {
-#if defined (PLATFORM_HAS_LEDS)
- leds_off(LEDS_RED);
-#endif
+    leds_off(LEDS_RED);
+    
+    uint8_t i;
+    for(i=MAXPIX; i>0; i--)
+    {    
+        led[i-1].r=0;led[i-1].g=0;led[i-1].b=0;
+    }
+    
+    led[1].r = 255;
+		
+    //Rainbowcolors
+    colors[0].r=150; colors[0].g=150; colors[0].b=150;
+    colors[1].r=255; colors[1].g=000; colors[1].b=000;//red
+    colors[2].r=255; colors[2].g=100; colors[2].b=000;//orange
+    colors[3].r=100; colors[3].g=255; colors[3].b=000;//yellow
+    colors[4].r=000; colors[4].g=255; colors[4].b=000;//green
+    colors[5].r=000; colors[5].g=100; colors[5].b=255;//light blue (türkis)
+    colors[6].r=000; colors[6].g=000; colors[6].b=255;//blue
+    colors[7].r=100; colors[7].g=000; colors[7].b=255;//violet
+
+    //ctimer_set(&timer, CLOCK_SECOND, callback, NULL);
 }
 
 PROCESS(er_example_server, "Erbium Example Server");
@@ -127,6 +184,11 @@ PROCESS_THREAD(er_example_server, ev, data)
   PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
 
   hw_init();
+
+
+   DDRB|=_BV(ws2812_pin);
+		
+   
   /* Initialize the REST engine. */
   rest_init_engine();
 
@@ -135,52 +197,24 @@ PROCESS_THREAD(er_example_server, ev, data)
    * WARNING: Activating twice only means alternate path, not two instances!
    * All static variables are the same for each URI path.
    */
-  rest_activate_resource(&res_hello, "test/hello");
-/*  rest_activate_resource(&res_mirror, "debug/mirror"); */
-/*  rest_activate_resource(&res_chunks, "test/chunks"); */
-/*  rest_activate_resource(&res_separate, "test/separate"); */
-  rest_activate_resource(&res_push, "test/push");
-/*  rest_activate_resource(&res_event, "s/button"); */
-/*  rest_activate_resource(&res_sub, "test/sub"); */
-/*  rest_activate_resource(&res_b1_sep_b2, "test/b1sepb2"); */
-#if PLATFORM_HAS_LEDS
-/*  rest_activate_resource(&res_leds, "a/leds"); */
-  rest_activate_resource(&res_toggle, "a/toggle");
-#endif
-#if PLATFORM_HAS_LIGHT
-  rest_activate_resource(&res_light, "s/light"); 
-  SENSORS_ACTIVATE(light_sensor);  
-#endif
 
-#if PLATFORM_HAS_BATTERY
+  extern resource_t res_ws2812;
+  rest_activate_resource(&res_ws2812, "a/ws2812");
+  
+  rest_activate_resource(&res_toggle, "a/toggle");
+    
+    
   rest_activate_resource(&res_battery, "s/battery");  
   SENSORS_ACTIVATE(battery_sensor);  
-#endif
-/*
-#if PLATFORM_HAS_RADIO
-  rest_activate_resource(&res_radio, "s/radio");  
-  SENSORS_ACTIVATE(radio_sensor);  
-#endif
-#if PLATFORM_HAS_SHT11
-  rest_activate_resource(&res_sht11, "s/sht11");  
-  SENSORS_ACTIVATE(sht11_sensor);  
-#endif
-*/
+
+
 
   /* Define application-specific events here. */
   while(1) {
-    PROCESS_WAIT_EVENT();
-#if PLATFORM_HAS_BUTTON
-    if(ev == sensors_event && data == &button_sensor) {
-      PRINTF("*******BUTTON*******\n");
+      PROCESS_WAIT_EVENT();
 
-      /* Call the event_handler for this application-specific event. */
-      res_event.trigger();
-
-      /* Also call the separate response example handler. */
-      res_separate.resume();
-    }
-#endif /* PLATFORM_HAS_BUTTON */
+      
+      
   }                             /* while (1) */
 
   PROCESS_END();

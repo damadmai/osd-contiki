@@ -98,5 +98,9 @@ flash-server: guh_dollhouse.osd-merkur.hex guh_dollhouse.osd-merkur.eep
 	    flash:w:guh_dollhouse.osd-merkur.hex:a -U \
 	    eeprom:w:guh_dollhouse.osd-merkur.eep:a
 
+flash-server-mac: guh_dollhouse.osd-merkur.hex guh_dollhouse.osd-merkur.eep
+	avrdude -pm128rfa1 -carduino -P/dev/cu.usbserial -b57600 -e -U \
+	    flash:w:guh_dollhouse.osd-merkur.hex:a -U \
+	    eeprom:w:guh_dollhouse.osd-merkur.eep:a
 
 .PHONY: flash-server avr-size-server
