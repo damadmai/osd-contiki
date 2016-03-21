@@ -42,6 +42,8 @@
 #include "rest-engine.h"
 #include "light_ws2812.h"
 
+
+
 #define DEBUG 1
 #if DEBUG
 #include <stdio.h>
@@ -52,91 +54,170 @@
 
 
 
-struct cRGB led[10];
+extern struct cRGB led[MAXPIX];
+extern uint8_t effectmode;
+extern uint8_t effectspeed;
+extern struct cRGB effectcolor;
 
 static void res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 
 /*A simple actuator example, depending on the color query parameter and post variable mode, corresponding led is activated or deactivated*/
 RESOURCE(res_ws2812,
          "title=\"LEDs: ?number=0|1, POST/PUT color=r|g|b\";rt=\"Control\"",
-         NULL,
+         res_get_handler,
          res_post_put_handler,
          res_post_put_handler,
          NULL);
 
+
+static void
+res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+    
+    unsigned int accept = -1;
+    REST.get_header_accept(request, &accept);
+    
+    if(accept == -1 || accept == REST.type.TEXT_PLAIN) {
+        REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
+        snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "%u", effectmode);
+        
+        REST.set_response_payload(response, (uint8_t *)buffer, strlen((char *)buffer));
+    } else if(accept == REST.type.APPLICATION_XML) {
+        REST.set_header_content_type(response, REST.type.APPLICATION_XML);
+        snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "<Effect =\"%u\">", effectmode);
+        
+        REST.set_response_payload(response, buffer, strlen((char *)buffer));
+    } else if(accept == REST.type.APPLICATION_JSON) {
+        REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
+        snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "{'effectmode':{'mode':%u}", effectmode);
+        
+        REST.set_response_payload(response, buffer, strlen((char *)buffer));
+    } else {
+        REST.set_response_status(response, REST.status.NOT_ACCEPTABLE);
+        const char *msg = "Supporting content-types text/plain, application/xml, and application/json";
+        REST.set_response_payload(response, msg, strlen(msg));
+    }
+}
+
+
 static void
 res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
-  size_t len = 0;
-  const char *color = NULL;
-  const char *number = NULL;
-  //uint8_t mode = 0;
-  uint8_t pos = 0;
-  char red[3];
-  char green[3];
-  char blue[3];
-  uint8_t success = 1;
-
-  if((len = REST.get_query_variable(request, "number", &number))) {
-    //parsing which LED should be Addressed
-    pos=(uint8_t)atoi(number);
-    pos *= 2;
-    PRINTF("pos: %u\n", pos);
-  } else {    
-    PRINTF("no number query variable\n");
-    success = 0;
-  }
-
-
-  if((len = REST.get_post_variable(request, "color", &color))) {
-
-    // color is a 3 digit hex string r|g|b
-    // extract the hex values
-    PRINTF("color: %s\n", color);
-    strncpy(red, color, 2);
-    strncpy(green, color+2, 2);
-    strncpy(blue, color+4, 2);
+    size_t len = 0;
+    const char *color = NULL;
+    const char *number = NULL;
+    const char *value = NULL;
+    uint8_t pos = 0;
+    char red[3];
+    char green[3];
+    char blue[3];
+    uint8_t success = 1;
+    uint8_t a, i;
+    uint8_t cnt = 0;
     
-    //add NULL at the end so strol can convert this string
-    red[2] = '\0';
-    green[2] = '\0';
-    blue[2] = '\0';
-    PRINTF("red: %s\n", red);
-    PRINTF("green: %s\n", green);
-    PRINTF("blue: %s\n", blue);
-    //convert from hex to decimal
     
-    led[pos].r = (uint8_t)strtol(red,NULL,16);
-    led[pos].g = (uint8_t)strtol(green,NULL,16);
-    led[pos].b = (uint8_t)strtol(blue,NULL,16);
-
-    led[pos+1].r = led[pos].r;
-    led[pos+1].g = led[pos].g;
-    led[pos+1].b = led[pos].b;
-
-
-    PRINTF("red: %u\n", led[pos].r);
-    PRINTF("green: %u\n", led[pos].g);
-    PRINTF("blue: %u\n", led[pos].b);
     
-
-    //send the new array
-    ws2812_sendarray((uint8_t *)led,10*3);
-  } else {
-    PRINTF("no color post variable\n");
-    success = 0;
-  }
-
-/*
-  if (success &&  (len=REST.get_post_variable(request, "mode", &value))) {
-       mode = (uint8_t)atoi(value); // ToDo
-  } else {
-       success = 0;
-  }
-*/
-
-  if(!success) {
-    REST.set_response_status(response, REST.status.BAD_REQUEST);
-  }
+    if ((len = REST.get_query_variable(request, "mode", &value))){
+        effectmode = (uint8_t)atoi(value);
+        PRINTF("Mode: %u \n", effectmode);
+        
+        if (effectmode == 0) {
+            
+            if((len = REST.get_post_variable(request, "number", &number))) {
+                //parsing which LED should be Addressed
+                pos=(uint8_t)atoi(number);
+                PRINTF("pos: %u\n", pos);
+            } else {
+                PRINTF("no number post variable\n");
+                success = 0;
+            }
+            
+            if((len = REST.get_post_variable(request, "color", &color))) {
+                
+                // color is a 3 digit hex string r|g|b
+                // extract the hex values
+                cnt=(len/6);
+                
+                for (a=0; a < cnt; a++) {
+                    
+                    PRINTF("color: %s\n", color);
+                    strncpy(red, color+(6*a), 2);
+                    strncpy(green, color+2+(6*a), 2);
+                    strncpy(blue, color+4+(6*a), 2);
+                    
+                    //add NULL at the end so strol can convert this string
+                    red[2] = '\0';
+                    green[2] = '\0';
+                    blue[2] = '\0';
+                    PRINTF("red: %s\n", red);
+                    PRINTF("green: %s\n", green);
+                    PRINTF("blue: %s\n", blue);
+                    //convert from hex to decimal
+                    
+                    led[pos+a].r = (uint8_t)strtol(red,NULL,16);
+                    led[pos+a].g = (uint8_t)strtol(green,NULL,16);
+                    led[pos+a].b = (uint8_t)strtol(blue,NULL,16);
+                    
+                }
+                
+            } else {
+                PRINTF("no color post variable\n");
+                success = 0;
+            }
+            //send the new array
+            ws2812_sendarray((uint8_t *)led, MAXPIX*3);
+            
+        } else {
+            
+            
+            for(i=MAXPIX; i>0; i--)
+            {
+                led[i-1].r = 0;
+                led[i-1].g = 0;
+                led[i-1].b = 0;
+                
+            }
+            
+            if((len = REST.get_post_variable(request, "color", &color))) {
+                
+                PRINTF("color: %s\n", color);
+                strncpy(red, color, 2);
+                strncpy(green, color+2, 2);
+                strncpy(blue, color+4, 2);
+                
+                //add NULL at the end so strol can convert this string
+                red[2] = '\0';
+                green[2] = '\0';
+                blue[2] = '\0';
+                PRINTF("red: %s\n", red);
+                PRINTF("green: %s\n", green);
+                PRINTF("blue: %s\n", blue);
+                //convert from hex to decimal
+                
+                effectcolor.r = (uint8_t)strtol(red,NULL,16);
+                effectcolor.g = (uint8_t)strtol(green,NULL,16);
+                effectcolor.b = (uint8_t)strtol(blue,NULL,16);
+            }
+        }        
+        
+        
+    } else {
+        PRINTF("no mode query variable\n");
+        success = 0;
+    }
+    
+    
+    /*
+     if (success &&  (len=REST.get_post_variable(request, "mode", &value))) {
+     mode = (uint8_t)atoi(value); // ToDo
+     } else {
+     success = 0;
+     }
+     */
+    
+    if(!success) {
+        REST.set_response_status(response, REST.status.BAD_REQUEST);
+    }
 }
 

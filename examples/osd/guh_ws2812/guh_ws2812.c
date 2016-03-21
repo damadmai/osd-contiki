@@ -44,18 +44,25 @@
 #include "rest-engine.h"
 #include <util/delay.h>
 #include "light_ws2812.h"
-#include "sys/ctimer.h"
+//#include "sys/ctimer.h"
+#include "sys/rtimer.h"
 
-#define MAXPIX 240
-#define COLORLENGTH MAXPIX/2
-#define FADE 256/COLORLENGTH
+#define     PERIOD_T     RTIMER_SECOND/25
+#define RAND_MAX 239
+
 
 struct cRGB colors[8];
 struct cRGB led[MAXPIX];
-//static struct ctimer timer;
-static struct etimer timer;
 
-#define DEBUG 1
+uint8_t effectmode;
+uint8_t effectspeed;
+struct cRGB effectcolor;
+
+
+//static struct ctimer timer;
+static struct rtimer timer;
+
+#define DEBUG 0
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -78,75 +85,233 @@ extern resource_t res_leds, res_toggle;
 
 #include "dev/battery-sensor.h"
 extern resource_t res_battery;
-/*
 
-static void
-callback(void *ptr)
-{
-  ctimer_reset(&timer);
-  	uint8_t j = 1;
-	uint8_t k = 1;
 
-		
 
-        //shift all vallues by one led
-        uint8_t i=0;           
-        for(i=MAXPIX; i>1; i--) 
-            led[i-1]=led[i-2];
-        //change colour when colourlength is reached   
-        if(k>COLORLENGTH)
-        {
-            j++;
-            if(j>7)
+static char periodic_rtimer(struct rtimer *rt, void* ptr){
+    uint8_t ret;
+    rtimer_clock_t time_now = RTIMER_NOW();
+    
+    
+    static int i, j, k, up;
+    
+    
+    PRINTF("Timer triggered \n effectmode: %u \n", effectmode);
+    switch (effectmode) {
+        case 1:
+            // Color cycle - all leds same color
+            
+            if (up) {
+                j++;
+                if (j >= 7) {
+                    up = 0;
+                }
+            } else {
+                j--;
+                if (j <= 1) {
+                    up = 1;
+                }
+            }
+            
+            for(i=MAXPIX; i>0; i--)
             {
-              j=0;
+                led[i-1]=colors[j];
+            }
+            
+            break;
+            
+        case 2:
+            // Flash
+            
+            if (j == 0) {
+                j = 1;
+                
+                for(i=MAXPIX; i>0; i--)
+                {
+                    led[i-1] = effectcolor;
+                    
+                }
+            }else{
+                j = 0;
+                for(i=MAXPIX; i>0; i--)
+                {
+                    led[i-1].r = 0;
+                    led[i-1].g = 0;
+                    led[i-1].b = 0;
+                    
+                }
+            }
+            
+            break;
+            
+        case 3:
+            // Fade
+            
+            if (up) {
+                j += 2;
+                if (j>= 250) {
+                    up = 0;
+                }
+            } else{
+                j-= 2;
+                if (j <= 0) {
+                    up = 1;
+                }
+            }
+            
+            for(i=MAXPIX; i>0; i--)
+            {
+                led[i-1].r = j;
+                led[i-1].g = j;
+                led[i-1].b = j;
+                
+            }
+            
+            break;
+        case 4:
+            // Rainbow
+            
+            for(i=MAXPIX; i>1; i--)
+                led[i-1]=led[i-2];
+            //change colour when colourlength is reached
+            if(k>COLORLENGTH){
+                
+                j++;
+                if(j>7)
+                {
+                    j=0;
+                }
+                k=0;
+            }
+            k++;
+            //loop colouers
+            
+            //fade red
+            if(led[0].r<(colors[j].r-FADE))
+                led[0].r+=FADE;
+            
+            if(led[0].r>(colors[j].r+FADE))
+                led[0].r-=FADE;
+            
+            if(led[0].g<(colors[j].g-FADE))
+                led[0].g+=FADE;
+            
+            if(led[0].g>(colors[j].g+FADE))
+                led[0].g-=FADE;
+            
+            if(led[0].b<(colors[j].b-FADE))
+                led[0].b+=FADE;
+            
+            if(led[0].b>(colors[j].b+FADE))
+                led[0].b-=FADE;
+            
+            break;
+            
+        case 5:
+            // knight rider
+            
+            for(i=MAXPIX; i>0; i--)
+            {
+                led[i-1].r = 10;
+                led[i-1].g = 0;
+                led[i-1].b = 0;
+            }
+            
+            
+            if (up) {
+                j += 1;
+                if (j>= (MAXPIX - 15)) {
+                    up = 0;
+                }
+            } else{
+                j-= 1;
+                if (j <= 0) {
+                    up = 1;
+                }
+            }
+            
+            led[j].r = 50;
+            led[j+1].r = 50;
+            led[j+2].r = 100;
+            led[j+3].r = 100;
+            led[j+4].r = 150;
+            led[j+5].r = 180;
+            led[j+6].r = 200;
+            led[j+7].r = 255;
+            led[j+8].r = 255;
+            led[j+9].r = 200;
+            led[j+10].r = 180;
+            led[j+11].r = 150;
+            led[j+12].r = 100;
+            led[j+13].r = 80;
+            led[j+14].r = 50;
+            led[j+15].r = 30;
+            
+            break;
+        case 6:
+            // fire effect
+            for(i=20; i>0; i--)
+            {
+                j = (uint8_t)rand();
+                j %= 239;
+                led[j].r = 80;
+                led[j].g = 35;
+                led[j].b = 0;
+            }
+            
+            for(i=20; i>0; i--)
+            {
+                j = (uint8_t)rand();
+                j %= 239;
+                led[j].r = 25;
+                led[j].g = 8;
+                led[j].b = 0;
+            }
+            for(i=20; i>0; i--)
+            {
+                j = (uint8_t)rand();
+                j %= 239;
+                led[j].r = 10;
+                led[j].g = 3;
+                led[j].b = 0;
+            }
+            for(i=20; i>0; i--)
+            {
+                j = (uint8_t)rand();
+                j %= 239;
+                led[j].r = 100;
+                led[j].g = 35;
+                led[j].b = 0;
             }
 
-            k=0;
-        }
-        k++;
-        //loop colouers
-        
-        //fade red
-        if(led[0].r<(colors[j].r-FADE))
-            led[0].r+=FADE;
-            
-        if(led[0].r>(colors[j].r+FADE))
-            led[0].r-=FADE;
-
-        if(led[0].g<(colors[j].g-FADE))
-            led[0].g+=FADE;
-            
-        if(led[0].g>(colors[j].g+FADE))
-            led[0].g-=FADE;
-
-        if(led[0].b<(colors[j].b-FADE))
-            led[0].b+=FADE;
-            
-        if(led[0].b>(colors[j].b+FADE))
-            led[0].b-=FADE;
-
-
-
-
-  ws2812_sendarray((uint8_t *)led,MAXPIX*3);
+            break;
+        default:
+            break;
+    }
+    
+    ws2812_sendarray((uint8_t *)led, MAXPIX*3);
+    
+    ret = rtimer_set(&timer, time_now + PERIOD_T, 1, (void (*)(struct rtimer *, void *)) periodic_rtimer, NULL);
+    if(ret){
+        printf("Error Timer: %u\n", ret);
+    }
+    return 1;
 }
-*/
 
 
-void 
+
+void
 hw_init()
 {
     leds_off(LEDS_RED);
     
     uint8_t i;
     for(i=MAXPIX; i>0; i--)
-    {    
+    {
         led[i-1].r=0;led[i-1].g=0;led[i-1].b=0;
     }
+    ws2812_sendarray((uint8_t *)led,10*3);
     
-    led[1].r = 255;
-		
     //Rainbowcolors
     colors[0].r=150; colors[0].g=150; colors[0].b=150;
     colors[1].r=255; colors[1].g=000; colors[1].b=000;//red
@@ -156,8 +321,7 @@ hw_init()
     colors[5].r=000; colors[5].g=100; colors[5].b=255;//light blue (türkis)
     colors[6].r=000; colors[6].g=000; colors[6].b=255;//blue
     colors[7].r=100; colors[7].g=000; colors[7].b=255;//violet
-
-    //ctimer_set(&timer, CLOCK_SECOND, callback, NULL);
+    
 }
 
 PROCESS(er_example_server, "Erbium Example Server");
@@ -165,57 +329,57 @@ AUTOSTART_PROCESSES(&er_example_server);
 
 PROCESS_THREAD(er_example_server, ev, data)
 {
-  PROCESS_BEGIN();
-
-  PROCESS_PAUSE();
-
-  PRINTF("Starting Erbium Example Server\n");
-
+    
+    
+    PROCESS_BEGIN();
+    
+    PROCESS_PAUSE();
+    
+    PRINTF("Starting Erbium Example Server\n");
+    
 #ifdef RF_CHANNEL
-  PRINTF("RF channel: %u\n", RF_CHANNEL);
+    PRINTF("RF channel: %u\n", RF_CHANNEL);
 #endif
 #ifdef IEEE802154_PANID
-  PRINTF("PAN ID: 0x%04X\n", IEEE802154_PANID);
+    PRINTF("PAN ID: 0x%04X\n", IEEE802154_PANID);
 #endif
-
-  PRINTF("uIP buffer: %u\n", UIP_BUFSIZE);
-  PRINTF("LL header: %u\n", UIP_LLH_LEN);
-  PRINTF("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
-  PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
-
-  hw_init();
-
-
-   DDRB|=_BV(ws2812_pin);
-		
-   
-  /* Initialize the REST engine. */
-  rest_init_engine();
-
-  /*
-   * Bind the resources to their Uri-Path.
-   * WARNING: Activating twice only means alternate path, not two instances!
-   * All static variables are the same for each URI path.
-   */
-
-  extern resource_t res_ws2812;
-  rest_activate_resource(&res_ws2812, "a/ws2812");
-  
-  rest_activate_resource(&res_toggle, "a/toggle");
+    
+    PRINTF("uIP buffer: %u\n", UIP_BUFSIZE);
+    PRINTF("LL header: %u\n", UIP_LLH_LEN);
+    PRINTF("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
+    PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
+    
+    hw_init();
+    periodic_rtimer(&timer, NULL);
+    
+    DDRB|=_BV(ws2812_pin);
     
     
-  rest_activate_resource(&res_battery, "s/battery");  
-  SENSORS_ACTIVATE(battery_sensor);  
-
-
-
-  /* Define application-specific events here. */
-  while(1) {
-      PROCESS_WAIT_EVENT();
-
-      
-      
-  }                             /* while (1) */
-
-  PROCESS_END();
+    /* Initialize the REST engine. */
+    rest_init_engine();
+    
+    /*
+     * Bind the resources to their Uri-Path.
+     * WARNING: Activating twice only means alternate path, not two instances!
+     * All static variables are the same for each URI path.
+     */
+    
+    extern resource_t res_ws2812;
+    rest_activate_resource(&res_ws2812, "a/ws2812");
+    
+    rest_activate_resource(&res_toggle, "a/toggle");
+    
+    
+    rest_activate_resource(&res_battery, "s/battery");
+    SENSORS_ACTIVATE(battery_sensor);
+    
+    
+    
+    /* Define application-specific events here. */
+    while(1) {
+        PROCESS_WAIT_EVENT();
+        
+    }                             /* while (1) */
+    
+    PROCESS_END();
 }

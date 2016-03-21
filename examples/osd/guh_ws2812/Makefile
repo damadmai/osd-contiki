@@ -3,7 +3,7 @@ PLATFORM_FILES= avr-size-server guh_ws2812.osd-merkur.hex \
     guh_ws2812.osd-merkur.eep 
 endif
 
-all: guh_ws2812 $(PLATFORM_FILES)
+all: guh_ws2812  $(PLATFORM_FILES)
 
 # use target "er-plugtest-server" explicitly when requried 
 
@@ -65,6 +65,21 @@ endif
 #asmdir/%.S: %.c
 #	$(CC) $(CFLAGS) -MMD -S $< -o $@
 
+# border router rules
+$(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
+	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
+
+connect-router:	$(CONTIKI)/tools/tunslip6
+	sudo $(CONTIKI)/tools/tunslip6 aaaa::1/64
+
+connect-router-cooja:	$(CONTIKI)/tools/tunslip6
+	sudo $(CONTIKI)/tools/tunslip6 -a 127.0.0.1 -p 60001 aaaa::1/64
+
+connect-router-native:	$(CONTIKI)/examples/ipv6/native-border-router/border-router.native
+	sudo $(CONTIKI)/exmples/ipv6/native-border-router/border-router.native -a 127.0.0.1 -p 60001 aaaa::1/64
+
+connect-minimal:
+	sudo ip address add fdfd::1/64 dev tap0 
 
 avr-size-server: guh_ws2812.osd-merkur
 	avr-size -C --mcu=MCU=atmega128rfa1 guh_ws2812.osd-merkur
@@ -79,14 +94,13 @@ guh_ws2812.osd-merkur.eep: guh_ws2812.osd-merkur
 	    guh_ws2812.osd-merkur guh_ws2812.osd-merkur.eep
 
 flash-server: guh_ws2812.osd-merkur.hex guh_ws2812.osd-merkur.eep
-	avrdude -pm128rfa1 -carduino -P/dev/ttyUSB0 -b57600 -e -U \
+	avrdude -pm128rfa1 -c arduino -P/dev/ttyUSB0 -b57600 -e -U \
 	    flash:w:guh_ws2812.osd-merkur.hex:a -U \
 	    eeprom:w:guh_ws2812.osd-merkur.eep:a
 
 flash-server-mac: guh_ws2812.osd-merkur.hex guh_ws2812.osd-merkur.eep
-	avrdude -pm128rfa1 -carduino -P/dev/cu.usbserial -b57600 -e -U \
+	avrdude -pm128rfa1 -c arduino -P/dev/cu.usbserial -b57600 -e -U \
 	    flash:w:guh_ws2812.osd-merkur.hex:a -U \
 	    eeprom:w:guh_ws2812.osd-merkur.eep:a
-
 
 .PHONY: flash-server avr-size-server
