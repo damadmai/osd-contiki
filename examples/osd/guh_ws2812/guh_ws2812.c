@@ -44,11 +44,14 @@
 #include "rest-engine.h"
 #include <util/delay.h>
 #include "light_ws2812.h"
-//#include "sys/ctimer.h"
 #include "sys/rtimer.h"
+#include "dev/battery-sensor.h"
+#include "dev/leds.h"
 
 #define     PERIOD_T     RTIMER_SECOND/25
-#define RAND_MAX 239
+
+#undef  RAND_MAX
+#define RAND_MAX 0xef // defines max value for rand()
 
 
 struct cRGB colors[8];
@@ -80,11 +83,11 @@ static struct rtimer timer;
  */
 
 
-#include "dev/leds.h"
-extern resource_t res_leds, res_toggle;
 
-#include "dev/battery-sensor.h"
-extern resource_t res_battery;
+extern resource_t res_toggle;
+extern resource_t res_battery_obs;
+
+
 
 
 
@@ -96,32 +99,120 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
     static int i, j, k, up;
     
     
+    
+    /*
+     "0 - Off",
+     "1 - Color On",
+     "2 - Color Wave",
+     "3 - Color Fade",
+     "4 - Color Flash",
+     "5 - Rainbow Wave",
+     "6 - Rainbow Flash",
+     "7 - Knight Rider",
+     "8 - Fire"
+     
+     */
+    
+    
     PRINTF("Timer triggered \n effectmode: %u \n", effectmode);
     switch (effectmode) {
-        case 1:
-            // Color cycle - all leds same color
-            
-            if (up) {
-                j++;
-                if (j >= 7) {
-                    up = 0;
-                }
-            } else {
-                j--;
-                if (j <= 1) {
-                    up = 1;
-                }
-            }
-            
+        case 0:
+            /*---------------------------
+             *
+             *   EFFECT MODE OFF
+             *
+             *---------------------------*/
             for(i=MAXPIX; i>0; i--)
             {
-                led[i-1]=colors[j];
+                led[i-1].r = 0;
+                led[i-1].g = 0;
+                led[i-1].b = 0;
+                
             }
+            break;
+            
+        case 1:
+            
+            /*---------------------------
+             *
+             *   EFFECT MODE COLOR ON
+             *
+             *---------------------------*/
+            for(i=MAXPIX; i>0; i--)
+            {
+                led[i-1]=effectcolor;
+            }
+
+            break;
+        case 2:
+            /*---------------------------
+             *
+             *   EFFECT MODE COLOR WAVE
+             *
+             *---------------------------*/
+            
+            for(i=MAXPIX; i>1; i--)
+                led[i-1]=led[i-2];
+            
+            if(led[0].r<(effectcolor.r-FADE))
+                led[0].r+=FADE;
+            
+            if(led[0].r>(effectcolor.r+FADE))
+                led[0].r-=FADE;
+            
+            if(led[0].g<(effectcolor.g-FADE))
+                led[0].g+=FADE;
+            
+            if(led[0].g>(effectcolor.g+FADE))
+                led[0].g-=FADE;
+            
+            if(led[0].b<(effectcolor.b-FADE))
+                led[0].b+=FADE;
+            
+            if(led[0].b>(effectcolor.b+FADE))
+                led[0].b-=FADE;
             
             break;
             
-        case 2:
-            // Flash
+        case 3:
+            /*---------------------------
+             *
+             *   EFFECT MODE COLOR FADE
+             *
+             *---------------------------*/
+            
+            
+            if(led[0].r<(effectcolor.r-FADE))
+                led[0].r+=FADE;
+            
+            if(led[0].r>(effectcolor.r+FADE))
+                led[0].r-=FADE;
+            
+            if(led[0].g<(effectcolor.g-FADE))
+                led[0].g+=FADE;
+            
+            if(led[0].g>(effectcolor.g+FADE))
+                led[0].g-=FADE;
+            
+            if(led[0].b<(effectcolor.b-FADE))
+                led[0].b+=FADE;
+            
+            if(led[0].b>(effectcolor.b+FADE))
+                led[0].b-=FADE;
+            
+            for(i=MAXPIX; i>1; i--)
+                led[i-1]=led[0];
+            
+            break;
+            
+            
+        case 4:
+            
+            /*---------------------------
+             *
+             *   EFFECT MODE COLOR FLASH
+             *
+             *---------------------------*/
             
             if (j == 0) {
                 j = 1;
@@ -141,36 +232,19 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
                     
                 }
             }
+
             
             break;
             
-        case 3:
-            // Fade
             
-            if (up) {
-                j += 2;
-                if (j>= 250) {
-                    up = 0;
-                }
-            } else{
-                j-= 2;
-                if (j <= 0) {
-                    up = 1;
-                }
-            }
-            
-            for(i=MAXPIX; i>0; i--)
-            {
-                led[i-1].r = j;
-                led[i-1].g = j;
-                led[i-1].b = j;
-                
-            }
-            
-            break;
-        case 4:
-            // Rainbow
-            
+        case 5:
+            /*---------------------------
+            *
+            *   EFFECT MODE RAINBOW WAVE
+            *
+            *---------------------------*/
+             
+             
             for(i=MAXPIX; i>1; i--)
                 led[i-1]=led[i-2];
             //change colour when colourlength is reached
@@ -207,8 +281,39 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             
             break;
             
-        case 5:
-            // knight rider
+        case 6:
+            /*---------------------------
+             *
+             *   EFFECT MODE RAINBOW FLASH
+             *
+             *---------------------------*/
+            
+            if (up) {
+                j++;
+                if (j >= 7) {
+                    up = 0;
+                }
+            } else {
+                j--;
+                if (j <= 1) {
+                    up = 1;
+                }
+            }
+            
+            for(i=MAXPIX; i>0; i--)
+            {
+                led[i-1]=colors[j];
+            }
+            
+            break;
+            
+            
+        case 7:
+            /*---------------------------
+             *
+             *   EFFECT MODE KNIGHT RIDER
+             *
+             *---------------------------*/
             
             for(i=MAXPIX; i>0; i--)
             {
@@ -248,8 +353,12 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             led[j+15].r = 30;
             
             break;
-        case 6:
-            // fire effect
+        case 8:
+            /*---------------------------
+             *
+             *   EFFECT MODE FIRE EFFECT
+             *
+             *---------------------------*/
             for(i=20; i>0; i--)
             {
                 j = (uint8_t)rand();
@@ -285,7 +394,15 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             }
 
             break;
+        case 9:
+            /*---------------------------
+             *
+             *   EFFECT MODE SINGLE LED
+             *
+             *---------------------------*/
+            break;
         default:
+            effectmode = 0;
             break;
     }
     
@@ -364,13 +481,16 @@ PROCESS_THREAD(er_example_server, ev, data)
      * All static variables are the same for each URI path.
      */
     
+    extern resource_t res_version;
+    rest_activate_resource(&res_version, "p/version");
+    
     extern resource_t res_ws2812;
-    rest_activate_resource(&res_ws2812, "a/ws2812");
+    rest_activate_resource(&res_ws2812, "a/effect");
     
-    rest_activate_resource(&res_toggle, "a/toggle");
+    extern resource_t res_color_obs;
+    rest_activate_resource(&res_color_obs, "a/color");
     
-    
-    rest_activate_resource(&res_battery, "s/battery");
+    rest_activate_resource(&res_battery_obs, "s/battery");
     SENSORS_ACTIVATE(battery_sensor);
     
     

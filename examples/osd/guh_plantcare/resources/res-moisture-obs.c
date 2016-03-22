@@ -77,7 +77,7 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
      * This would be a TODO in the corresponding files in contiki/apps/erbium/!
      */
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-    REST.set_header_max_age(response, res_moisture_obs.periodic->period / CLOCK_SECOND*60);
+    REST.set_header_max_age(response, res_moisture_obs.periodic->period / CLOCK_SECOND);
     REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%d", pushed_value));
     
     /* The REST.subscription_handler() will be called for observable resources by the REST framework. */
