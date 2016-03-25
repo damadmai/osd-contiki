@@ -64,15 +64,6 @@
  * Resources to be activated need to be imported through the extern keyword.
  * The build system automatically compiles the resources in the corresponding sub-directory.
  */
-extern resource_t
-//res_hello,
-res_mirror,
-res_chunks,
-res_separate,
-//res_push,
-//res_event,
-res_sub,
-res_b1_sep_b2;
 
 void
 hw_init()
@@ -123,9 +114,7 @@ PROCESS_THREAD(er_example_server, ev, data)
     PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
     
     hw_init();
-    
-    
-    
+     
     /* Initialize the REST engine. */
     rest_init_engine();
     
@@ -141,8 +130,6 @@ PROCESS_THREAD(er_example_server, ev, data)
     rest_activate_resource(&res_version, "p/version");
     
     PRINTF("Activate Battery\n");
-    //extern resource_t res_battery;
-    //rest_activate_resource(&res_battery, "s/battery");
     extern resource_t res_battery_obs;
     rest_activate_resource(&res_battery_obs, "s/battery");
     SENSORS_ACTIVATE(battery_sensor);
@@ -152,36 +139,24 @@ PROCESS_THREAD(er_example_server, ev, data)
     rest_activate_resource (&res_toggle, "a/toggle");
     
     PRINTF("Activate Moisture\n");
-    //extern resource_t res_moisture;
-    //rest_activate_resource (&res_moisture, "s/moisture");
     extern resource_t res_moisture_obs;
     rest_activate_resource (&res_moisture_obs, "s/moisture");
     
     PRINTF("Activate Water\n");
-    //extern resource_t res_event;
-    //rest_activate_resource (&res_event, "s/water");
-    
     extern resource_t res_water_obs;
     SENSORS_ACTIVATE(water_sensor);
     rest_activate_resource (&res_water_obs, "s/water");
     
     
     PRINTF("Activate Pump\n");
-    //extern resource_t res_pump;
-    //rest_activate_resource (&res_pump, "a/pump");
-    
     extern resource_t res_pump_obs;
     rest_activate_resource (&res_pump_obs, "a/pump");
 
     
     PRINTF("Activate Light\n");
-    //extern resource_t res_light;
-    //rest_activate_resource (&res_light, "a/light");
-    
     extern resource_t res_light_obs;
     rest_activate_resource (&res_light_obs, "a/light");
     
-     
      
      /* Define application-specific events here. */
     while(1) {

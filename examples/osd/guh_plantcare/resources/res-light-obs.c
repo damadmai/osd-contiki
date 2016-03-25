@@ -64,7 +64,7 @@ PERIODIC_RESOURCE(res_light_obs,
          res_periodic_handler);
 
 
-static uint8_t pushed_value = 0;
+static uint16_t pushed_value = 0;
 
 
 static void
@@ -84,18 +84,17 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
     int success = 1;
     const char *value = NULL;
     size_t len = 0;
-    uint8_t pwm;
+    uint16_t pwm;
+    
     PRINTF("got light post request");
     
     len=REST.get_post_variable(request, "pwm", &value);
     if (len) {
-        pwm = ((uint8_t) atoi(value));
-        if (pwm > 122){
-            pwm = 255;
-        }else{
-            pwm = 0;
-        }
-        PRINTF("pwm = %d \n", pwm);
+        pwm = ((uint16_t) atoi(value));
+
+        PRINTF("pwm = %u \n", pwm);
+        
+        pwm %= 256; // analog write allows only values 0-255
         analogWrite(3, pwm);
     }else {
         success = 0;
@@ -120,7 +119,7 @@ res_periodic_handler()
     
     PRINTF("periodic handler light value \n");
     
-    uint8_t pwm = 0;
+    uint16_t pwm = 0;
     PRINTF("got light get request");
     pwm = OCR3B;
     

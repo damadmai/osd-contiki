@@ -58,7 +58,8 @@ struct cRGB colors[8];
 struct cRGB led[MAXPIX];
 
 uint8_t effectmode;
-uint8_t effectspeed;
+uint8_t maxpix = MAXPIX;
+uint8_t colorlenght;
 struct cRGB effectcolor;
 
 
@@ -83,22 +84,13 @@ static struct rtimer timer;
  */
 
 
-
-extern resource_t res_toggle;
-extern resource_t res_battery_obs;
-
-
-
-
-
 static char periodic_rtimer(struct rtimer *rt, void* ptr){
     uint8_t ret;
     rtimer_clock_t time_now = RTIMER_NOW();
     
     
-    static int i, j, k, up;
-    
-    
+    static int i, j, k, up, tmp;
+    float r, g, b;
     
     /*
      "0 - Off",
@@ -112,6 +104,13 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
      "8 - Fire"
      
      */
+    if (effectmode != tmp) {
+        // if effect changes, than reset all parameters
+        i=0;
+        j=0;
+        up=1;
+        tmp = effectmode;
+    }
     
     
     PRINTF("Timer triggered \n effectmode: %u \n", effectmode);
@@ -122,7 +121,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *   EFFECT MODE OFF
              *
              *---------------------------*/
-            for(i=MAXPIX; i>0; i--)
+            for(i=maxpix; i>0; i--)
             {
                 led[i-1].r = 0;
                 led[i-1].g = 0;
@@ -138,7 +137,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *   EFFECT MODE COLOR ON
              *
              *---------------------------*/
-            for(i=MAXPIX; i>0; i--)
+            for(i=maxpix; i>0; i--)
             {
                 led[i-1]=effectcolor;
             }
@@ -151,11 +150,33 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *
              *---------------------------*/
             
-            for(i=MAXPIX; i>1; i--)
+            
+            if (up) {
+                j+=1;
+                if (j == 16){
+                    up = 0;
+                }
+            } else {
+                j-=1;
+                if (j == 0){
+                    up = 1;
+                }
+            }
+            
+            r = ((j*j)/256.0)*effectcolor.r;
+            g = ((j*j)/256.0)*effectcolor.g;
+            b = ((j*j)/256.0)*effectcolor.b;
+            
+            led[0].r = (uint8_t)r;
+            led[0].g = (uint8_t)g;
+            led[0].b = (uint8_t)b;
+            
+            
+            for(i=maxpix; i>1; i--) // shift leds
                 led[i-1]=led[i-2];
             
-            if(led[0].r<(effectcolor.r-FADE))
-                led[0].r+=FADE;
+            /*
+            
             
             if(led[0].r>(effectcolor.r+FADE))
                 led[0].r-=FADE;
@@ -171,6 +192,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             
             if(led[0].b>(effectcolor.b+FADE))
                 led[0].b-=FADE;
+             */
             
             break;
             
@@ -181,26 +203,27 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *
              *---------------------------*/
             
+            if (up) {
+                j++;
+                if (j == 255){
+                    up = 0;
+                }
+            } else {
+                j--;
+                if (j == 0){
+                    up = 1;
+                }
+            }
             
-            if(led[0].r<(effectcolor.r-FADE))
-                led[0].r+=FADE;
+            r = (j/255.0)*effectcolor.r;
+            g = (j/255.0)*effectcolor.g;
+            b = (j/255.0)*effectcolor.b;
             
-            if(led[0].r>(effectcolor.r+FADE))
-                led[0].r-=FADE;
+            led[0].r = (uint8_t)r;
+            led[0].g = (uint8_t)g;
+            led[0].b = (uint8_t)b;
             
-            if(led[0].g<(effectcolor.g-FADE))
-                led[0].g+=FADE;
-            
-            if(led[0].g>(effectcolor.g+FADE))
-                led[0].g-=FADE;
-            
-            if(led[0].b<(effectcolor.b-FADE))
-                led[0].b+=FADE;
-            
-            if(led[0].b>(effectcolor.b+FADE))
-                led[0].b-=FADE;
-            
-            for(i=MAXPIX; i>1; i--)
+            for(i=maxpix; i>1; i--) // shift leds
                 led[i-1]=led[0];
             
             break;
@@ -214,28 +237,33 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *
              *---------------------------*/
             
-            if (j == 0) {
-                j = 1;
+            if (up) {
+                j++;
+                if (j >= 5){
+                    up = 0;
+                    j = 0;
+                }
                 
-                for(i=MAXPIX; i>0; i--)
+                for(i=maxpix; i>0; i--)
                 {
                     led[i-1] = effectcolor;
                     
                 }
             }else{
-                j = 0;
-                for(i=MAXPIX; i>0; i--)
+                j++;
+                if (j >= 5){
+                    up = 1;
+                    j = 0;
+                }
+                
+                for(i=maxpix; i>0; i--)
                 {
                     led[i-1].r = 0;
                     led[i-1].g = 0;
                     led[i-1].b = 0;
-                    
                 }
             }
-
-            
             break;
-            
             
         case 5:
             /*---------------------------
@@ -245,11 +273,10 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             *---------------------------*/
              
              
-            for(i=MAXPIX; i>1; i--)
+            for(i=maxpix; i>1; i--)
                 led[i-1]=led[i-2];
             //change colour when colourlength is reached
             if(k>COLORLENGTH){
-                
                 j++;
                 if(j>7)
                 {
@@ -300,7 +327,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
                 }
             }
             
-            for(i=MAXPIX; i>0; i--)
+            for(i=maxpix; i>0; i--)
             {
                 led[i-1]=colors[j];
             }
@@ -315,7 +342,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *
              *---------------------------*/
             
-            for(i=MAXPIX; i>0; i--)
+            for(i=maxpix; i>0; i--)
             {
                 led[i-1].r = 10;
                 led[i-1].g = 0;
@@ -325,7 +352,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             
             if (up) {
                 j += 1;
-                if (j>= (MAXPIX - 15)) {
+                if (j>= (maxpix - 15)) {
                     up = 0;
                 }
             } else{
@@ -359,41 +386,41 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *   EFFECT MODE FIRE EFFECT
              *
              *---------------------------*/
-            for(i=20; i>0; i--)
+            for(i=(maxpix/12); i>0; i--)
             {
                 j = (uint8_t)rand();
-                j %= 239;
+                j %= maxpix;
                 led[j].r = 80;
                 led[j].g = 35;
                 led[j].b = 0;
             }
             
-            for(i=20; i>0; i--)
+            for(i=(maxpix/12); i>0; i--)
             {
                 j = (uint8_t)rand();
-                j %= 239;
+                j %= maxpix;
                 led[j].r = 25;
                 led[j].g = 8;
                 led[j].b = 0;
             }
-            for(i=20; i>0; i--)
+            for(i=(maxpix/12); i>0; i--)
             {
                 j = (uint8_t)rand();
-                j %= 239;
+                j %= maxpix;
                 led[j].r = 10;
                 led[j].g = 3;
                 led[j].b = 0;
             }
-            for(i=20; i>0; i--)
+            for(i=(maxpix/12); i>0; i--)
             {
                 j = (uint8_t)rand();
-                j %= 239;
+                j %= maxpix;
                 led[j].r = 100;
                 led[j].g = 35;
                 led[j].b = 0;
             }
-
             break;
+            
         case 9:
             /*---------------------------
              *
@@ -406,7 +433,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             break;
     }
     
-    ws2812_sendarray((uint8_t *)led, MAXPIX*3);
+    ws2812_sendarray((uint8_t *)led, maxpix*3);
     
     ret = rtimer_set(&timer, time_now + PERIOD_T, 1, (void (*)(struct rtimer *, void *)) periodic_rtimer, NULL);
     if(ret){
@@ -415,19 +442,19 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
     return 1;
 }
 
-
-
 void
 hw_init()
 {
     leds_off(LEDS_RED);
     
     uint8_t i;
-    for(i=MAXPIX; i>0; i--)
+    for(i=maxpix; i>0; i--)
     {
-        led[i-1].r=0;led[i-1].g=0;led[i-1].b=0;
+        led[i-1].r=0;
+        led[i-1].g=0;
+        led[i-1].b=0;
     }
-    ws2812_sendarray((uint8_t *)led,10*3);
+    ws2812_sendarray((uint8_t *)led,maxpix*3);
     
     //Rainbowcolors
     colors[0].r=150; colors[0].g=150; colors[0].b=150;
@@ -446,8 +473,6 @@ AUTOSTART_PROCESSES(&er_example_server);
 
 PROCESS_THREAD(er_example_server, ev, data)
 {
-    
-    
     PROCESS_BEGIN();
     
     PROCESS_PAUSE();
@@ -484,12 +509,19 @@ PROCESS_THREAD(er_example_server, ev, data)
     extern resource_t res_version;
     rest_activate_resource(&res_version, "p/version");
     
-    extern resource_t res_ws2812;
-    rest_activate_resource(&res_ws2812, "a/effect");
+    extern resource_t res_maxpix_obs;
+    rest_activate_resource(&res_maxpix_obs, "p/maxpix");
+    
+    extern resource_t res_effect_obs;
+    rest_activate_resource(&res_effect_obs, "a/effect");
     
     extern resource_t res_color_obs;
     rest_activate_resource(&res_color_obs, "a/color");
     
+    extern resource_t res_singleled;
+    rest_activate_resource(&res_singleled, "a/led");
+    
+    extern resource_t res_battery_obs;
     rest_activate_resource(&res_battery_obs, "s/battery");
     SENSORS_ACTIVATE(battery_sensor);
     
