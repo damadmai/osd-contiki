@@ -19,9 +19,9 @@ if [ "$UID" -ne 0 ]; then
  exit
 fi
 
-printGreen "Stop tunslib6..."
+printGreen "Stop tunslip6..."
 
-sudo systemctl stop tunslib6
+sudo systemctl stop tunslip6
 
 if [ ! -d /sys/class/gpio/gpio17 ]; then
  printGreen "Export GPIO17"
@@ -41,7 +41,7 @@ sudo echo "1" > /sys/class/gpio/gpio17/value
 printGreen "Waiting for Contiki"
 sleep 10
 
-printGreen "Start tunslib6"
-sudo systemctl restart tunslib6
+printGreen "Start tunslip6"
+sudo systemctl restart tunslip6
 
-sudo service tunslib6 status | grep "IPv6" -A1
+sudo service tunslip6 status | grep "IPv6" -A1

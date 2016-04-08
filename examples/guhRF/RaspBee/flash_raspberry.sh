@@ -18,8 +18,8 @@ if [ "$UID" -ne 0 ]; then
     exit
 fi
 
-printGreen "Stop tunslib6 service..."
-systemctl stop tunslib6
+printGreen "Stop tunslip6 service..."
+systemctl stop tunslip6
 
 if [ ! -d /sys/class/gpio/gpio18 ]; then
     printGreen "Export GPIO18"
@@ -50,11 +50,11 @@ avrdude -pm256rfr2 -c stk500 -P/dev/ttyAMA0 -b57600 -D -U flash:w:border-router.
 printGreen "Set GPIO18 low"
 echo "0" > /sys/class/gpio/gpio18/value
 
-printGreen "Start tunslib6 service..."
-systemctl restart tunslib6
+printGreen "Start tunslip6 service..."
+systemctl restart tunslip6
 
 printGreen "Restart guhd service..."
 systemctl restart guhd
 
-service tunslib6 status | grep "IPv6" -A1
+service tunslip6 status | grep "IPv6" -A1
 

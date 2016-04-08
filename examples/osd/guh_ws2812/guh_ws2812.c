@@ -58,10 +58,12 @@ struct cRGB colors[8];
 struct cRGB led[MAXPIX];
 
 uint8_t effectmode;
+uint8_t effectspeed;
+uint8_t effectbrightness;
 uint8_t maxpix = MAXPIX;
 uint8_t colorlenght;
 struct cRGB effectcolor;
-
+struct cRGB tcolor1, tcolor2, tcolor3;
 
 //static struct ctimer timer;
 static struct rtimer timer;
@@ -86,11 +88,15 @@ static struct rtimer timer;
 
 static char periodic_rtimer(struct rtimer *rt, void* ptr){
     uint8_t ret;
+    uint8_t brightness;
+    uint16_t period;
     rtimer_clock_t time_now = RTIMER_NOW();
     
     
     static int i, j, k, up, tmp;
     float r, g, b;
+    
+    period = (uint8_t)(RTIMER_SECOND/((25/240)*effectspeed)); //25 = max calles per second 25fps
     
     /*
      "0 - Off",
@@ -102,6 +108,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
      "6 - Rainbow Flash",
      "7 - Knight Rider",
      "8 - Fire"
+     "9 - Tricolore"
      
      */
     if (effectmode != tmp) {
@@ -111,6 +118,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
         up=1;
         tmp = effectmode;
     }
+    
     
     
     PRINTF("Timer triggered \n effectmode: %u \n", effectmode);
@@ -424,9 +432,29 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
         case 9:
             /*---------------------------
              *
-             *   EFFECT MODE SINGLE LED
+             *   EFFECT MODE TRICOLORE
              *
              *---------------------------*/
+            
+            
+            // Color one 0 bis maxpix/3
+            for(i=(maxpix/3); i>0; i--)
+            {
+                led[i-1]=tcolor1;
+            }
+            
+            //Color two maxpix/3 bis 2 maxpix/3
+            for(i=2*(maxpix/3); i>(maxpix/3); i--)
+            {
+                led[i-1]=tcolor1;
+            }
+            
+            //Color three 2 maxpix/3 bis maxpix
+            for(i=maxpix; i>(maxpix/3); i--)
+            {
+                led[i-1]=tcolor1;
+            }
+            
             break;
         default:
             effectmode = 0;
@@ -517,6 +545,15 @@ PROCESS_THREAD(er_example_server, ev, data)
     
     extern resource_t res_color_obs;
     rest_activate_resource(&res_color_obs, "a/color");
+    
+    extern resource_t res_speed_obs;
+    rest_activate_resource(&res_speed_obs, "a/speed");
+    
+    extern resource_t res_brightness_obs;
+    rest_activate_resource(&res_brightness_obs, "a/brightness");
+    
+    extern resource_t res_tcolor_obs;
+    rest_activate_resource(&res_tcolor_obs, "a/tcolor");
     
     extern resource_t res_singleled;
     rest_activate_resource(&res_singleled, "a/led");
