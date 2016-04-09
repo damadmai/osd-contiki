@@ -38,13 +38,11 @@
  */
 
 #include "contiki.h"
-
-#if PLATFORM_HAS_LEDS
-
 #include <string.h>
 #include "contiki.h"
 #include "rest-engine.h"
 
+extern resource_t res_count_obs;
 extern uint8_t count;
 
 static void res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
@@ -57,9 +55,11 @@ RESOURCE(res_reset,
          NULL,
          NULL);
 
+
 static void
 res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
     count = 0;
+    //REST.trigger(&res_count_obs);
+    res_count_obs.trigger();
 }
-#endif

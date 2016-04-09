@@ -102,7 +102,7 @@ flash-server: guh_orderbutton.osd-merkur.hex guh_orderbutton.osd-merkur.eep
 
 
 flash-server-osx: guh_orderbutton.osd-merkur.hex guh_orderbutton.osd-merkur.eep
-	avrdude -pm128rfa1 -carduino -P/dev/cu.usbserial-A602JBIC -b57600 -e -U \
+	avrdude -pm128rfa1 -carduino -P/dev/cu.usbserial -b57600 -e -U \
 	    flash:w:guh_orderbutton.osd-merkur.hex:a -U \
 	    eeprom:w:guh_orderbutton.osd-merkur.eep:a
 

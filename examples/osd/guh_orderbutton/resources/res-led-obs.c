@@ -41,9 +41,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "rest-engine.h"
+#include "dev/leds.h"
 #include "Arduino.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
 #else
@@ -72,7 +73,7 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
     
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
     REST.set_header_max_age(response, res_led_obs.periodic->period / CLOCK_SECOND);
-    REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%u", pushed_value));
+    REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%d", pushed_value));
     
 }
 
@@ -93,11 +94,13 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
         if(a == 0) {
             //led off
             PRINTF("led off\n");
-            digitalWrite(4, HIGH);
+            leds_off(LEDS_RED);
+            //digitalWrite(4, HIGH);
         } else if(a == 1) {
             //led on
             PRINTF("mode on\n");
-            digitalWrite(4, LOW);
+            leds_on(LEDS_RED);
+            //digitalWrite(4, LOW);
         } else {
             success = 0;
         }
@@ -121,18 +124,22 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
 static void
 res_periodic_handler()
 {
+    uint8_t mode;
     
     PRINTF("periodic handler led value \n");
-    uint8_t mode = digitalRead(4);
+    if (digitalRead(4)){
+        mode = 0;
+    } else{
+        mode = 1;
+    }
     
     
-    /* Usually a condition is defined under with subscribers are notified, e.g., large enough delta in sensor reading. */
+    
     if (mode != pushed_value) {
         
         pushed_value = mode;
         PRINTF("push led value %u \n", pushed_value);
-        
-        /* Notify the registered observers which will trigger the res_get_handler to create the response. */
+     
         REST.notify_subscribers(&res_led_obs);
     }
 }

@@ -45,6 +45,7 @@
 #include "rest-engine.h"
 #include "button-sensor.h"
 #include "dev/battery-sensor.h"
+#include "dev/leds.h"
 #include "Arduino.h"
 
 
@@ -72,8 +73,9 @@ hw_init()
 {
     
     //onboard LED
-    pinMode(4, OUTPUT);
-    digitalWrite(4, HIGH);
+    //pinMode(4, OUTPUT);
+    leds_off(LEDS_RED);
+    //digitalWrite(4, HIGH);
     
     //button sensor = J1| D8 | PD0 | INT0
     pinMode(8, INPUT);
@@ -152,7 +154,9 @@ PROCESS_THREAD(er_example_server, ev, data)
                 count++;
                 
                 /* Call the event_handler for this application-specific event. */
+                
                 res_button_obs.trigger();
+                res_count_obs.trigger();
                 
             }
         }

@@ -66,7 +66,7 @@ unsigned char sensors_flags[1];
 #define BUTTON_BIT INTF0
 #define BUTTON_CHECK_IRQ() (EIFR & BUTTON_BIT) ? 0 : 1
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)

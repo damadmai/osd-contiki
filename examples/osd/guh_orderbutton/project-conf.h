@@ -43,6 +43,16 @@
    #define PLATFORM_HAS_BATTERY 1
 
 /* Custom channel and PAN ID configuration for your project. */
+
+/* Custom channel and PAN ID configuration for your project. */
+
+
+#undef  CHANNEL_802_15_4
+#define CHANNEL_802_15_4          26
+
+#undef RF_CHANNEL
+#define RF_CHANNEL                     26
+
 /*
    #undef RF_CHANNEL
    #define RF_CHANNEL                     26
@@ -85,10 +95,10 @@
 #define COAP_MAX_OPEN_TRANSACTIONS     11
 
 /* Must be <= open transactions, default is COAP_MAX_OPEN_TRANSACTIONS-1. */
-/*
+
    #undef COAP_MAX_OBSERVERS
-   #define COAP_MAX_OBSERVERS             2
- */
+   #define COAP_MAX_OBSERVERS             10
+
 
 /* Filtering .well-known/core per query can be disabled to save space. */
 #undef COAP_LINK_FORMAT_FILTERING

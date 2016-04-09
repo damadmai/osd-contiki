@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include "rest-engine.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -53,19 +53,17 @@
 
 extern uint8_t count;
 
-static void res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
-static void res_periodic_handler(void);
+static void res_event_handler(void);
 
 
-PERIODIC_RESOURCE(res_count_obs,
+EVENT_RESOURCE(res_count_obs,
                   "title=\"count \";obs",
                   res_get_handler,
                   NULL,
                   NULL,
                   NULL,
-                  60 * CLOCK_SECOND,
-                  res_periodic_handler);
+                  res_event_handler);
 
 static int pushed_value = 0;
 
@@ -74,13 +72,12 @@ static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
-    REST.set_header_max_age(response, res_count_obs.periodic->period / CLOCK_SECOND);
     REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%d", pushed_value));
 }
 
 
 static void
-res_periodic_handler()
+res_event_handler()
 {
     
     PRINTF("periodic handler count value\n");
