@@ -63,7 +63,7 @@ uint8_t effectbrightness;
 uint8_t maxpix = MAXPIX;
 uint8_t colorlenght;
 struct cRGB effectcolor;
-struct cRGB tcolor1, tcolor2, tcolor3;
+struct cRGB tcolor[3];
 
 //static struct ctimer timer;
 static struct rtimer timer;
@@ -88,7 +88,7 @@ static struct rtimer timer;
 
 static char periodic_rtimer(struct rtimer *rt, void* ptr){
     uint8_t ret;
-    uint8_t brightness;
+    float brightness;
     uint16_t period;
     rtimer_clock_t time_now = RTIMER_NOW();
     
@@ -96,6 +96,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
     static int i, j, k, up, tmp;
     float r, g, b;
     
+    brightness = effectbrightness/100;
     period = (uint8_t)(RTIMER_SECOND/((25/240)*effectspeed)); //25 = max calles per second 25fps
     
     /*
@@ -147,7 +148,9 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
              *---------------------------*/
             for(i=maxpix; i>0; i--)
             {
-                led[i-1]=effectcolor;
+                led[i-1].r = effectcolor.r*brightness;
+                led[i-1].g = effectcolor.g*brightness;
+                led[i-1].b = effectcolor.b*brightness;
             }
 
             break;
@@ -171,9 +174,9 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
                 }
             }
             
-            r = ((j*j)/256.0)*effectcolor.r;
-            g = ((j*j)/256.0)*effectcolor.g;
-            b = ((j*j)/256.0)*effectcolor.b;
+            r = ((j*j)/256.0)*(effectcolor.r*brightness);
+            g = ((j*j)/256.0)*(effectcolor.g*brightness);
+            b = ((j*j)/256.0)*(effectcolor.b*brightness);
             
             led[0].r = (uint8_t)r;
             led[0].g = (uint8_t)g;
@@ -440,19 +443,25 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             // Color one 0 bis maxpix/3
             for(i=(maxpix/3); i>0; i--)
             {
-                led[i-1]=tcolor1;
+                led[i-1].r=tcolor[0].r*brightness;
+                led[i-1].g=tcolor[0].g*brightness;
+                led[i-1].b=tcolor[0].b*brightness;
             }
             
             //Color two maxpix/3 bis 2 maxpix/3
             for(i=2*(maxpix/3); i>(maxpix/3); i--)
             {
-                led[i-1]=tcolor1;
+                led[i-1].r=tcolor[1].r*brightness;
+                led[i-1].g=tcolor[1].g*brightness;
+                led[i-1].b=tcolor[1].b*brightness;
             }
             
             //Color three 2 maxpix/3 bis maxpix
             for(i=maxpix; i>(maxpix/3); i--)
             {
-                led[i-1]=tcolor1;
+                led[i-1].r=tcolor[2].r*brightness;
+                led[i-1].g=tcolor[2].g*brightness;
+                led[i-1].b=tcolor[2].b*brightness;
             }
             
             break;
@@ -463,7 +472,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
     
     ws2812_sendarray((uint8_t *)led, maxpix*3);
     
-    ret = rtimer_set(&timer, time_now + PERIOD_T, 1, (void (*)(struct rtimer *, void *)) periodic_rtimer, NULL);
+    ret = rtimer_set(&timer, time_now + period, 1, (void (*)(struct rtimer *, void *)) periodic_rtimer, NULL);
     if(ret){
         printf("Error Timer: %u\n", ret);
     }

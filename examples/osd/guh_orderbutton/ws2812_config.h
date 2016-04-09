@@ -1,0 +1,24 @@
+/*
+ * light_ws2812_config.h
+ *
+ * Created: 18.01.2014 09:58:15
+ *
+ * User Configuration file for the light_ws2812_lib
+ *
+ */ 
+
+
+#ifndef WS2812_CONFIG_H_
+#define WS2812_CONFIG_H_
+
+///////////////////////////////////////////////////////////////////////
+// Define I/O pin
+///////////////////////////////////////////////////////////////////////
+
+#define ws2812_port D     // Data port
+#define ws2812_pin  3     // Data out pin
+#define MAXPIX 8
+#define COLORLENGTH MAXPIX/2
+#define FADE 256/COLORLENGTH
+
+#endif /* WS2812_CONFIG_H_ */
