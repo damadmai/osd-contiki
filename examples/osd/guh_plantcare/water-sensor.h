@@ -43,6 +43,6 @@
 
 extern const struct sensors_sensor water_sensor;
 
-#define WATER_SENSOR "WATER"
+#define WATER_SENSOR "Water"
 
 #endif /* __WATER_SENSOR_H__ */

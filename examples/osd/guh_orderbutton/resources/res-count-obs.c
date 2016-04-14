@@ -54,16 +54,17 @@
 extern uint8_t count;
 
 static void res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
+static void res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset);
 static void res_event_handler(void);
 
 
 EVENT_RESOURCE(res_count_obs,
-                  "title=\"count \";obs",
-                  res_get_handler,
-                  NULL,
-                  NULL,
-                  NULL,
-                  res_event_handler);
+               "title=\"count \";obs",
+               res_get_handler,
+               res_post_put_handler,
+               res_post_put_handler,
+               NULL,
+               res_event_handler);
 
 static int pushed_value = 0;
 
@@ -73,6 +74,30 @@ res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferr
 {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
     REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%d", pushed_value));
+}
+
+static void res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
+{
+    size_t len = 0;
+    const char *number = NULL;
+    uint8_t success = 1;
+    
+    
+    if((len = REST.get_post_variable(request, "count", &number))) {
+        PRINTF("Set count value to %s \n", number);
+        
+        count = (uint8_t)atoi(number);
+        res_count_obs.trigger();
+        
+    } else {
+        PRINTF("no count  post variable\n");
+        success = 0;
+    }
+    
+    if(!success) {
+        REST.set_response_status(response, REST.status.BAD_REQUEST);
+    }
+    
 }
 
 

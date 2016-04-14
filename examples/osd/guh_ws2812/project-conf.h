@@ -39,31 +39,31 @@
 #ifndef __PROJECT_ERBIUM_CONF_H__
 #define __PROJECT_ERBIUM_CONF_H__
 
-   #define PLATFORM_HAS_LEDS   1
-   #define PLATFORM_HAS_BATTERY 1
+#define PLATFORM_HAS_LEDS   1
+#define PLATFORM_HAS_BATTERY 1
 
 /* Custom channel and PAN ID configuration for your project. */
 
+//guhRF uses channel 26
+//OSDomotics uses channel 25
+#undef  CHANNEL_802_15_4
+#define CHANNEL_802_15_4          26
 
-
-   #undef  CHANNEL_802_15_4
-   #define CHANNEL_802_15_4          26
-
-   #undef RF_CHANNEL
-   #define RF_CHANNEL                     26
+#undef RF_CHANNEL
+#define RF_CHANNEL                     26
 /*
-   #undef IEEE802154_CONF_PANID
-   #define IEEE802154_CONF_PANID          0xABCD
-*/
+ #undef IEEE802154_CONF_PANID
+ #define IEEE802154_CONF_PANID          0xABCD
+ */
 
 /* IP buffer size must match all other hops, in particular the border router. */
 
-   #undef UIP_CONF_BUFFER_SIZE
-   #define UIP_CONF_BUFFER_SIZE           256
- 
+#undef UIP_CONF_BUFFER_SIZE
+#define UIP_CONF_BUFFER_SIZE           256
+
 
 /* Disabling RDC and CSMA for demo purposes. Core updates often
-   require more memory. */
+ require more memory. */
 /* For projects, optimize memory and enable RDC and CSMA again. */
 //#undef NETSTACK_CONF_RDC
 //#define NETSTACK_CONF_RDC              nullrdc_driver
@@ -81,18 +81,18 @@
 
 /* Estimate your header size, especially when using Proxy-Uri. */
 /*
-   #undef COAP_MAX_HEADER_SIZE
-   #define COAP_MAX_HEADER_SIZE           70
+ #undef COAP_MAX_HEADER_SIZE
+ #define COAP_MAX_HEADER_SIZE           70
  */
 
 /* Multiplies with chunk size, be aware of memory constraints. */
 #undef COAP_MAX_OPEN_TRANSACTIONS
-#define COAP_MAX_OPEN_TRANSACTIONS     4
+#define COAP_MAX_OPEN_TRANSACTIONS     11
 
 /* Must be <= open transactions, default is COAP_MAX_OPEN_TRANSACTIONS-1. */
 /*
-   #undef COAP_MAX_OBSERVERS
-   #define COAP_MAX_OBSERVERS             2
+ #undef COAP_MAX_OBSERVERS
+ #define COAP_MAX_OBSERVERS             2
  */
 
 /* Filtering .well-known/core per query can be disabled to save space. */

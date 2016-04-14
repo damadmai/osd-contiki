@@ -102,7 +102,7 @@ flash-server: guh_plantcare.osd-merkur.hex guh_plantcare.osd-merkur.eep
 
 
 flash-server-osx: guh_plantcare.osd-merkur.hex guh_plantcare.osd-merkur.eep
-	avrdude -pm128rfa1 -carduino -P/dev/cu.usbserial-A602JBIC -b57600 -e -U \
+	avrdude -pm128rfa1 -carduino -P/dev/cu.usbserial -b57600 -e -U \
 	    flash:w:guh_plantcare.osd-merkur.hex:a -U \
 	    eeprom:w:guh_plantcare.osd-merkur.eep:a
 

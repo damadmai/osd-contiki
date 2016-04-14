@@ -109,7 +109,7 @@ configure(int type, int c)
                     timer_set(&debouncetimer, 0);
                     DDRD  |= (0<<DDD0); // Set pin as input
                     PORTD |= (1<<PORTD0); // Set port PORTE bint 6 with pullup resistor
-                    EICRA |= (3<<ISC00); // For rising edge
+                    EICRA |= ((1<<ISC01) | (1<<ISC00)); // For rising edge
                     EIMSK |= (1<<INT0); // Set int
                     enabled = 1;
                     sei();

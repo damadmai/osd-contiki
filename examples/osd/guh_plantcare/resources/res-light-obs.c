@@ -39,8 +39,8 @@
 
 #include "contiki.h"
 #include <string.h>
+#include <stdlib.h>
 #include "rest-engine.h"
-#include "Arduino.h"
 
 #define DEBUG 1
 #if DEBUG
@@ -93,9 +93,16 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
         pwm = ((uint16_t) atoi(value));
 
         PRINTF("pwm = %u \n", pwm);
+        if (pwm >= 1){
+            pwm = 255;
+            PORTE |= (1<<PE4);
+        }else{
+            PORTE &= ~(1<<PE4);
+        }
+            
+        //pwm %= 256; // analog write allows only values 0-255
+        //OCR3B = pwm;
         
-        pwm %= 256; // analog write allows only values 0-255
-        analogWrite(3, pwm);
     }else {
         success = 0;
     }
@@ -119,18 +126,22 @@ res_periodic_handler()
     
     PRINTF("periodic handler light value \n");
     
-    uint16_t pwm = 0;
-    PRINTF("got light get request");
-    pwm = OCR3B;
+    uint16_t state = 0;
+
+    if(PORTE & (1<<PE4)){
+        state = 255;
+    }else{
+        state = 0;
+    }
     
-    PRINTF("pwm=%u \n", pwm);
+    PRINTF("pwm=%u \n", state);
     
     
     /* Usually a condition is defined under with subscribers are notified, e.g., large enough delta in sensor reading. */
-    if (pwm != pushed_value) {
+    if (state != pushed_value) {
         
-        pushed_value = pwm;
-        PRINTF("push pump value %u \n", pushed_value);
+        pushed_value = state;
+        PRINTF("push light value %u \n", pushed_value);
         
         /* Notify the registered observers which will trigger the res_get_handler to create the response. */
         REST.notify_subscribers(&res_light_obs);

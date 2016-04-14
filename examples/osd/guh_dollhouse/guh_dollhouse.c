@@ -70,14 +70,14 @@ struct cRGB led[MAXPIX];
  * The build system automatically compiles the resources in the corresponding sub-directory.
  */
 extern resource_t
-  res_hello,
-  res_mirror,
-  res_chunks,
-  res_separate,
-  res_push,
-  res_event,
-  res_sub,
-  res_b1_sep_b2;
+res_hello,
+res_mirror,
+res_chunks,
+res_separate,
+res_push,
+res_event,
+res_sub,
+res_b1_sep_b2;
 #if PLATFORM_HAS_LEDS
 #include "dev/leds.h"
 extern resource_t res_leds, res_toggle;
@@ -90,13 +90,13 @@ extern resource_t res_battery;
 
 
 
-void 
+void
 hw_init()
 {
 #if defined (PLATFORM_HAS_LEDS)
- leds_off(LEDS_RED);
+    leds_off(LEDS_RED);
 #endif
-
+    
 }
 
 PROCESS(er_example_server, "Erbium Example Server");
@@ -104,54 +104,56 @@ AUTOSTART_PROCESSES(&er_example_server);
 
 PROCESS_THREAD(er_example_server, ev, data)
 {
-  PROCESS_BEGIN();
-
-  PROCESS_PAUSE();
-
-  PRINTF("Starting Erbium Example Server\n");
-
+    PROCESS_BEGIN();
+    
+    PROCESS_PAUSE();
+    
+    PRINTF("Starting Erbium Example Server\n");
+    
 #ifdef RF_CHANNEL
-  PRINTF("RF channel: %u\n", RF_CHANNEL);
+    PRINTF("RF channel: %u\n", RF_CHANNEL);
 #endif
 #ifdef IEEE802154_PANID
-  PRINTF("PAN ID: 0x%04X\n", IEEE802154_PANID);
+    PRINTF("PAN ID: 0x%04X\n", IEEE802154_PANID);
 #endif
-
-  PRINTF("uIP buffer: %u\n", UIP_BUFSIZE);
-  PRINTF("LL header: %u\n", UIP_LLH_LEN);
-  PRINTF("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
-  PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
-
-  hw_init();
-
-
-   DDRB|=_BV(ws2812_pin);
-		
-   
-  /* Initialize the REST engine. */
-  rest_init_engine();
-
-  /*
-   * Bind the resources to their Uri-Path.
-   * WARNING: Activating twice only means alternate path, not two instances!
-   * All static variables are the same for each URI path.
-   */
-
-  extern resource_t res_ws2812;
-  rest_activate_resource(&res_ws2812, "a/ws2812");
-  
-
+    
+    PRINTF("uIP buffer: %u\n", UIP_BUFSIZE);
+    PRINTF("LL header: %u\n", UIP_LLH_LEN);
+    PRINTF("IP+UDP header: %u\n", UIP_IPUDPH_LEN);
+    PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
+    
+    hw_init();
+    
+    NETSTACK_MAC.off(1);
+    
+    
+    DDRB|=_BV(ws2812_pin);
+    
+    
+    /* Initialize the REST engine. */
+    rest_init_engine();
+    
+    /*
+     * Bind the resources to their Uri-Path.
+     * WARNING: Activating twice only means alternate path, not two instances!
+     * All static variables are the same for each URI path.
+     */
+    
+    extern resource_t res_ws2812;
+    rest_activate_resource(&res_ws2812, "a/ws2812");
+    
+    
 #if PLATFORM_HAS_BATTERY
-  rest_activate_resource(&res_battery, "s/battery");  
-  SENSORS_ACTIVATE(battery_sensor);  
+    rest_activate_resource(&res_battery, "s/battery");
+    SENSORS_ACTIVATE(battery_sensor);
 #endif
-/*
-
-
-  /* Define application-specific events here. */
-  while(1) {
-    PROCESS_WAIT_EVENT();
-  }                             /* while (1) */
-
-  PROCESS_END();
+    /*
+     
+     
+     /* Define application-specific events here. */
+    while(1) {
+        PROCESS_WAIT_EVENT();
+    }                             /* while (1) */
+    
+    PROCESS_END();
 }

@@ -73,9 +73,7 @@ hw_init()
 {
     
     //onboard LED
-    //pinMode(4, OUTPUT);
     leds_off(LEDS_RED);
-    //digitalWrite(4, HIGH);
     
     //button sensor = J1| D8 | PD0 | INT0
     pinMode(8, INPUT);
@@ -106,6 +104,8 @@ PROCESS_THREAD(er_example_server, ev, data)
     PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
     
     hw_init();
+    
+    NETSTACK_MAC.off(1);
      
     /* Initialize the REST engine. */
     rest_init_engine();
@@ -139,10 +139,11 @@ PROCESS_THREAD(er_example_server, ev, data)
     extern resource_t res_led_obs;
     rest_activate_resource (&res_led_obs, "a/led");
 
+    /*
     PRINTF("Activate Reset\n");
     extern resource_t res_reset;
     rest_activate_resource (&res_reset, "a/reset");
-    
+    */
      
      /* Define application-specific events here. */
     while(1) {

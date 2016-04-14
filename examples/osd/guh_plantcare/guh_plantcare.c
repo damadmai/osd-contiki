@@ -45,8 +45,7 @@
 #include "rest-engine.h"
 #include "water-sensor.h"
 #include "dev/battery-sensor.h"
-#include "Arduino.h"
-
+#include "hw_timer.h"
 
 #define DEBUG 1
 #if DEBUG
@@ -66,27 +65,42 @@
  */
 
 void
+led_pwm_init (void)
+{
+    uint8_t pwm, max_ticks;
+    int8_t result = hwtimer_pwm_ini (3, 20, HWT_PWM_PHASE_CORRECT, 0);
+    PRINTF ("HWTIMER init: %d\n", result);
+    max_ticks = hwtimer_pwm_max_ticks (3);
+    pwm = max_ticks / 2;
+    hwtimer_set_pwm (3, HWT_CHANNEL_B, pwm);
+    hwtimer_pwm_inverse (3, HWT_CHANNEL_B);
+    DDRE  |= (1<<PINE4);
+}
+
+void
 hw_init()
 {
     
     //onboard LED
-    pinMode(4, OUTPUT);
-    digitalWrite(4, HIGH);
+    DDRE  |= (1<<PE5);
+    PORTE |= (1<<PE5);
     
     //water sensor = J1| D8 | PD0 | INT0
-    pinMode(8, INPUT);
+    DDRD  &= ~(1<<PD0);
+    PORTD &= ~(1<<PD0);
     
-    //moisture sensor = J2 | A5 | PF1
-    DDRF &= ~(1<<PF1);
+    //moisture sensor = J2 | A5 D20 | PF1
+    DDRF  &= ~(1<<PF1);
     PORTF &= ~(1<<PF1);
     
-    //MosFET for pump = J3 | D3 | PE4
-    pinMode(7, OUTPUT);
+    //MosFET for pump = J3 | D7 | PD2
+    DDRD  |= (1<<PD2);
+    PORTD &= ~(1<<PD2);
     
-    //MosFET for lighting = J4 | D7 | PD2
     
-    pinMode(3, OUTPUT);
-    arduino_pwm_timer_init();
+    //Init PWM on Pin PE4
+    //led_pwm_init();
+    DDRE  |= (1<<PINE4);
     
 }
 
@@ -114,7 +128,9 @@ PROCESS_THREAD(er_example_server, ev, data)
     PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
     
     hw_init();
-     
+    
+    NETSTACK_MAC.off(1);
+    
     /* Initialize the REST engine. */
     rest_init_engine();
     
@@ -164,7 +180,7 @@ PROCESS_THREAD(er_example_server, ev, data)
         PRINTF("Event triggered \n");
         if(ev == sensors_event){
             if (data == &water_sensor) {
-                PRINTF("WATER EMPTY \n");
+                PRINTF("WATER: %u\n", water_sensor.value);
                 
                 /* Call the event_handler for this application-specific event. */
                 res_water_obs.trigger();

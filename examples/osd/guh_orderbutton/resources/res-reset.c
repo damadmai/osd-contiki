@@ -37,7 +37,6 @@
  *      Bernhard Trinnes <bernhard.trinnes@guh.guru>
  */
 
-#include "contiki.h"
 #include <string.h>
 #include "contiki.h"
 #include "rest-engine.h"
@@ -60,6 +59,5 @@ static void
 res_post_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
     count = 0;
-    //REST.trigger(&res_count_obs);
-    res_count_obs.trigger();
+    //res_count_obs.trigger();
 }

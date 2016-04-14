@@ -41,7 +41,7 @@
 
 
 /*
- * For water grove module
+ * For water grove modul
  * Connected to J1 - D8 - PD0 - INT0
  */
 
@@ -60,8 +60,8 @@ const struct sensors_sensor water_sensor;
 static struct timer debouncetimer;
 static int status(int type);
 static int enabled = 0;
-struct sensors_sensor *sensors[1];
-unsigned char sensors_flags[1];
+//struct sensors_sensor *sensors[1];
+//unsigned char sensors_flags[1];
 
 #define WATER_BIT INTF0
 #define WATER_CHECK_IRQ() (EIFR & WATER_BIT) ? 0 : 1
@@ -109,7 +109,7 @@ configure(int type, int c)
                     timer_set(&debouncetimer, 0);
                     DDRD  |= (0<<DDD0); // Set pin as input
                     PORTD |= (1<<PORTD0); // Set port PORTE bint 6 with pullup resistor
-                    EICRA |= (3<<ISC00); // For rising edge
+                    EICRA |= (1<<ISC00); // For rising edge
                     EIMSK |= (1<<INT0); // Set int
                     enabled = 1;
                     sei();
