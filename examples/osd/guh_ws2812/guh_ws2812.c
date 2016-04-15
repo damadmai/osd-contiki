@@ -57,9 +57,9 @@
 struct cRGB colors[8];
 struct cRGB led[MAXPIX];
 
-uint8_t effectmode;
-uint8_t effectspeed;
-uint8_t effectbrightness;
+uint8_t effectmode = 0;
+uint8_t effectspeed = 60;
+uint8_t effectbrightness = 0;
 uint8_t maxpix = MAXPIX;
 uint8_t colorlenght;
 struct cRGB effectcolor;
@@ -68,7 +68,7 @@ struct cRGB tcolor[3];
 //static struct ctimer timer;
 static struct rtimer timer;
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -96,8 +96,8 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
     static int i, j, k, up, tmp;
     float r, g, b;
     
-    brightness = effectbrightness/100;
-    period = (uint8_t)(RTIMER_SECOND/((25/240)*effectspeed)); //25 = max calles per second 25fps
+    brightness = (float)effectbrightness/100;
+    period = ((float)RTIMER_SECOND/((25.0*effectspeed)/240.0)); //25 = max calles per second 25fps
     
     /*
      "0 - Off",
@@ -121,8 +121,6 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
     }
     
     
-    
-    PRINTF("Timer triggered \n effectmode: %u \n", effectmode);
     switch (effectmode) {
         case 0:
             /*---------------------------
@@ -186,24 +184,6 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             for(i=maxpix; i>1; i--) // shift leds
                 led[i-1]=led[i-2];
             
-            /*
-            
-            
-            if(led[0].r>(effectcolor.r+FADE))
-                led[0].r-=FADE;
-            
-            if(led[0].g<(effectcolor.g-FADE))
-                led[0].g+=FADE;
-            
-            if(led[0].g>(effectcolor.g+FADE))
-                led[0].g-=FADE;
-            
-            if(led[0].b<(effectcolor.b-FADE))
-                led[0].b+=FADE;
-            
-            if(led[0].b>(effectcolor.b+FADE))
-                led[0].b-=FADE;
-             */
             
             break;
             
@@ -216,7 +196,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             
             if (up) {
                 j++;
-                if (j == 255){
+                if (j == 16){
                     up = 0;
                 }
             } else {
@@ -226,9 +206,9 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
                 }
             }
             
-            r = (j/255.0)*effectcolor.r;
-            g = (j/255.0)*effectcolor.g;
-            b = (j/255.0)*effectcolor.b;
+            r = ((j*j)/256.0)*(effectcolor.r*brightness);
+            g = ((j*j)/256.0)*(effectcolor.g*brightness);
+            b = ((j*j)/256.0)*(effectcolor.b*brightness);
             
             led[0].r = (uint8_t)r;
             led[0].g = (uint8_t)g;
@@ -449,7 +429,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             }
             
             //Color two maxpix/3 bis 2 maxpix/3
-            for(i=2*(maxpix/3); i>(maxpix/3); i--)
+            for(i=(2*(maxpix/3)); i>(maxpix/3); i--)
             {
                 led[i-1].r=tcolor[1].r*brightness;
                 led[i-1].g=tcolor[1].g*brightness;
@@ -457,7 +437,7 @@ static char periodic_rtimer(struct rtimer *rt, void* ptr){
             }
             
             //Color three 2 maxpix/3 bis maxpix
-            for(i=maxpix; i>(maxpix/3); i--)
+            for(i=maxpix; i>(2*(maxpix/3)); i--)
             {
                 led[i-1].r=tcolor[2].r*brightness;
                 led[i-1].g=tcolor[2].g*brightness;
@@ -529,6 +509,9 @@ PROCESS_THREAD(er_example_server, ev, data)
     PRINTF("REST max chunk: %u\n", REST_MAX_CHUNK_SIZE);
     
     hw_init();
+    
+    NETSTACK_MAC.off(1);
+    
     periodic_rtimer(&timer, NULL);
     
     DDRB|=_BV(ws2812_pin);

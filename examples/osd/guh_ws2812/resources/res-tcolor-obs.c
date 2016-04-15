@@ -44,8 +44,9 @@
 
 
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
+#include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
 #else
 #define PRINTF(...)
@@ -75,6 +76,11 @@ static struct cRGB pushed_value[3];
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+    uint8_t i;
+    for (i=0; i<3; i++) {
+        pushed_value[i] = tcolor[i];
+    }
+    
     /*
      * For minimal complexity, request query and options should be ignored for GET on observable resources.
      * Otherwise the requests must be stored with the observer list and passed by REST.notify_subscribers().
@@ -101,7 +107,7 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
     
     len = REST.get_post_variable(request, "color", &color);
     
-    if(len) {
+    if(len >= 18) {
         
         PRINTF("color: %s\n", color);
         
@@ -135,6 +141,10 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
     
     if(!success) {
         REST.set_response_status(response, REST.status.BAD_REQUEST);
+    }else {
+    
+        REST.notify_subscribers(&res_tcolor_obs);
+    
     }
 }
 
@@ -148,15 +158,16 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
 static void
 res_periodic_handler()
 {
-    
+    uint8_t i;
     /* Do a periodic task here, e.g., sampling a sensor. */
     PRINTF("periodic effect color handler\n");
     
     /* Usually a condition is defined under with subscribers are notified, e.g., large enough delta in sensor reading. */
-    if ((tcolor[0].r != pushed_value[0].r) || (tcolor[0].g != pushed_value[0].g) || (tcolor[0].b != pushed_value[0].b)) {
-        
-        pushed_value[0] = tcolor[0];
-        /* Notify the registered observers which will trigger the res_get_handler to create the response. */
-        REST.notify_subscribers(&res_tcolor_obs);
-    }
+        if (((tcolor[0].r != pushed_value[0].r) || (tcolor[0].g != pushed_value[0].g) || (tcolor[0].b != pushed_value[0].b)) ||
+            ((tcolor[1].r != pushed_value[1].r) || (tcolor[1].g != pushed_value[1].g) || (tcolor[1].b != pushed_value[1].b)) ||
+            ((tcolor[2].r != pushed_value[2].r) || (tcolor[2].g != pushed_value[2].g) || (tcolor[2].b != pushed_value[2].b))){
+            
+            /* Notify the registered observers which will trigger the res_get_handler to create the response. */
+            REST.notify_subscribers(&res_tcolor_obs);
+        }
 }

@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include "rest-engine.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -73,6 +73,7 @@ static int pushed_value = 0;
 static void
 res_get_handler(void *request, void *response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset)
 {
+    pushed_value = effectbrightness;
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
     REST.set_header_max_age(response, res_brightness_obs.periodic->period / CLOCK_SECOND);
     REST.set_response_payload(response, buffer, snprintf((char *)buffer, preferred_size, "%d", pushed_value));
@@ -88,7 +89,7 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
     uint8_t tmp;
     
     
-    if ((len = REST.get_post_variable(request, "bpm", &value))){
+    if ((len = REST.get_post_variable(request, "percent", &value))){
         
         tmp = (uint8_t)atoi(value);
         PRINTF("Brightness: %u \n", tmp);
@@ -118,7 +119,6 @@ res_periodic_handler()
     /* Usually a condition is defined under with subscribers are notified, e.g., large enough delta in sensor reading. */
     if (effectbrightness != pushed_value) {
         
-        pushed_value = effectbrightness;
         PRINTF("push value %u \n", pushed_value);
         
         /* Notify the registered observers which will trigger the res_get_handler to create the response. */

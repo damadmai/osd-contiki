@@ -98,7 +98,7 @@ flash-server: guh_ws2812.osd-merkur.hex guh_ws2812.osd-merkur.eep
 	    flash:w:guh_ws2812.osd-merkur.hex:a -U \
 	    eeprom:w:guh_ws2812.osd-merkur.eep:a
 
-flash-server-mac: guh_ws2812.osd-merkur.hex guh_ws2812.osd-merkur.eep
+flash-server-osx: guh_ws2812.osd-merkur.hex guh_ws2812.osd-merkur.eep
 	avrdude -pm128rfa1 -c arduino -P/dev/cu.usbserial -b57600 -e -U \
 	    flash:w:guh_ws2812.osd-merkur.hex:a -U \
 	    eeprom:w:guh_ws2812.osd-merkur.eep:a

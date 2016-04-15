@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include "rest-engine.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -67,7 +67,7 @@ PERIODIC_RESOURCE(res_speed_obs,
                   60 * CLOCK_SECOND,
                   res_periodic_handler);
 
-static int pushed_value = 0;
+static int pushed_value = 60;
 
 
 static void
@@ -92,7 +92,7 @@ res_post_put_handler(void *request, void *response, uint8_t *buffer, uint16_t pr
         
         tmp = (uint8_t)atoi(value);
         PRINTF("SPEED: %u \n", tmp);
-        if (tmp <= 240 && tmp > 0){
+        if (tmp <= 240 && tmp >= 60){
             effectspeed = tmp;
         }else {
             PRINTF("Not allowed Speed value\n");

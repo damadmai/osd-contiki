@@ -84,10 +84,8 @@ ISR(INT0_vect)
             timer_set(&debouncetimer, CLOCK_SECOND / 4);
             sensors_changed(&water_sensor);
             PRINTF("Sensor changed \n");
-
         }
     }
-    
 }
 /*---------------------------------------------------------------------------*/
 
